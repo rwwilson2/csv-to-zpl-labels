@@ -1,0 +1,17 @@
+[project]
+name = "csv-to-zpl"
+version = "0.1.0"
+description = "Stream a shipment CSV into ZPL shipping labels"
+readme = "README.md"
+requires-python = ">=3.9"
+license = {file = "LICENSE"}
+
+[project.scripts]
+csv-to-zpl = "csv_to_zpl.cli:main"
+
+[build-system]
+requires = ["setuptools>=61"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools.packages.find]
+where = ["src"]
