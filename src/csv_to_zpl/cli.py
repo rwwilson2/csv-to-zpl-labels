@@ -18,10 +18,15 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument(
         "-o", "--output", default="-", help="file to write ZPL to (default: stdout)"
     )
+    parser.add_argument(
+        "--skip-errors",
+        action="store_true",
+        help="skip rows missing required fields instead of aborting on the first one",
+    )
     return parser
 
 
-def run(input_path: str, output_path: str) -> int:
+def run(input_path: str, output_path: str, skip_errors: bool = False) -> int:
     in_file = (
         sys.stdin if input_path == "-" else open(input_path, newline="", encoding="utf-8")
     )
@@ -32,15 +37,19 @@ def run(input_path: str, output_path: str) -> int:
         # csv.DictReader pulls one row at a time off the underlying file
         # iterator, and we flush after each write below, so a multi-gigabyte
         # order export never has to sit fully in memory or in an output buffer.
+        had_errors = False
         for line_number, row in enumerate(reader, start=2):  # header occupies line 1
             try:
                 label = render_label(row)
             except MissingFieldError as exc:
                 print(f"{input_path}:{line_number}: {exc}", file=sys.stderr)
-                return 1
+                if not skip_errors:
+                    return 1
+                had_errors = True
+                continue
             out_file.write(label)
             out_file.flush()
-        return 0
+        return 1 if had_errors else 0
     finally:
         if in_file is not sys.stdin:
             in_file.close()
@@ -50,7 +59,7 @@ def run(input_path: str, output_path: str) -> int:
 
 def main(argv=None) -> int:
     args = build_parser().parse_args(argv)
-    return run(args.input, args.output)
+    return run(args.input, args.output, args.skip_errors)
 
 
 if __name__ == "__main__":

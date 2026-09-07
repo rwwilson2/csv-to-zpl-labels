@@ -42,6 +42,14 @@ If a row is missing a required field, the tool prints which file, line, and
 field failed to stderr and exits with status 1, without printing any labels
 past that point.
 
+Pass `--skip-errors` to keep going instead: bad rows are logged to stderr and
+skipped, every other row still gets a label, and the process exits 1 at the
+end only if at least one row was skipped.
+
+```
+python -m csv_to_zpl orders.csv --skip-errors > labels.zpl
+```
+
 ## CSV format
 
 One row per shipment. Column order doesn't matter; extra columns are
