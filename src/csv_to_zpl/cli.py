@@ -4,9 +4,26 @@ from __future__ import annotations
 
 import argparse
 import csv
+import gzip
+import io
 import sys
 
 from .label import MissingFieldError, render_label
+
+GZIP_MAGIC = b"\x1f\x8b"
+
+
+def _open_input(path: str) -> io.TextIOBase:
+    """Open a CSV source, transparently decompressing gzip input.
+
+    Detection is by magic bytes rather than the ".gz" extension, so it
+    works regardless of file naming and also covers gzipped CSV piped
+    in over stdin.
+    """
+    raw = sys.stdin.buffer if path == "-" else open(path, "rb")
+    if raw.peek(2)[:2] == GZIP_MAGIC:
+        raw = gzip.GzipFile(fileobj=raw)
+    return io.TextIOWrapper(raw, encoding="utf-8", newline="")
 
 
 def build_parser() -> argparse.ArgumentParser:
@@ -27,9 +44,7 @@ def build_parser() -> argparse.ArgumentParser:
 
 
 def run(input_path: str, output_path: str, skip_errors: bool = False) -> int:
-    in_file = (
-        sys.stdin if input_path == "-" else open(input_path, newline="", encoding="utf-8")
-    )
+    in_file = _open_input(input_path)
     out_file = sys.stdout if output_path == "-" else open(output_path, "w", encoding="utf-8")
 
     try:
@@ -51,7 +66,7 @@ def run(input_path: str, output_path: str, skip_errors: bool = False) -> int:
             out_file.flush()
         return 1 if had_errors else 0
     finally:
-        if in_file is not sys.stdin:
+        if input_path != "-":
             in_file.close()
         if out_file is not sys.stdout:
             out_file.close()

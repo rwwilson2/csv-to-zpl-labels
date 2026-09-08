@@ -38,6 +38,15 @@ port on Zebra printers):
 python -m csv_to_zpl orders.csv | nc 192.168.1.50 9100
 ```
 
+Gzip-compressed input is handled automatically, whether it's a `.gz` file
+or a gzip stream piped over stdin. Detection is by magic bytes, not the
+file extension, so this works either way:
+
+```
+python -m csv_to_zpl orders.csv.gz > labels.zpl
+zcat orders.csv.gz | python -m csv_to_zpl - > labels.zpl
+```
+
 If a row is missing a required field, the tool prints which file, line, and
 field failed to stderr and exits with status 1, without printing any labels
 past that point.
