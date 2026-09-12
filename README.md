@@ -95,3 +95,10 @@ pip install -e .
 
 This installs a `csv-to-zpl` command as well as the `python -m csv_to_zpl`
 form shown above.
+
+## Tests
+
+```
+pip install -e .
+python -m unittest discover -s tests
+```
