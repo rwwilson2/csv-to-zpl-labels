@@ -1,6 +1,12 @@
 import unittest
 
-from csv_to_zpl.label import REQUIRED_FIELDS, MissingFieldError, render_label, validate_row
+from csv_to_zpl.label import (
+    REQUIRED_FIELDS,
+    LabelSize,
+    MissingFieldError,
+    render_label,
+    validate_row,
+)
 
 
 def _row(**overrides):
@@ -68,6 +74,32 @@ class RenderLabelTests(unittest.TestCase):
         self.assertIn("^FDWeirdNameHere^FS", label)
         self.assertNotIn("Weird^Name", label)
         self.assertNotIn("Name~Here", label)
+
+
+class LabelSizeTests(unittest.TestCase):
+    def test_default_size_is_4x6_at_203dpi(self):
+        label = render_label(_row())
+        self.assertIn("^PW812", label)
+        self.assertIn("^LL1218", label)
+
+    def test_width_and_height_set_page_size_in_dots(self):
+        label = render_label(_row(), size=LabelSize(width_in=6, height_in=4))
+        self.assertIn("^PW1218", label)
+        self.assertIn("^LL812", label)
+
+    def test_changing_width_and_height_alone_does_not_rescale_fonts(self):
+        label = render_label(_row(), size=LabelSize(width_in=6, height_in=4))
+        self.assertIn("^A0N,50,50^FDJane Cooper^FS", label)
+
+    def test_higher_dpi_scales_layout_to_match_physical_size(self):
+        label = render_label(_row(), size=LabelSize(dpi=406))
+        self.assertIn("^PW1624", label)
+        self.assertIn("^LL2436", label)
+        self.assertIn("^A0N,100,100^FDJane Cooper^FS", label)
+
+    def test_lower_dpi_never_shrinks_barcode_module_width_below_one(self):
+        label = render_label(_row(), size=LabelSize(dpi=25))
+        self.assertIn("^BY1", label)
 
 
 if __name__ == "__main__":

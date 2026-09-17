@@ -111,6 +111,30 @@ class RunTests(unittest.TestCase):
         self.assertEqual(status, 0)
         self.assertIn("ORD-1", open(output_path, encoding="utf-8").read())
 
+    def test_main_wires_up_label_size_flags(self):
+        input_path = self._path("orders.csv")
+        _write_csv(input_path, ["ORD-1,Jane Cooper,4821 Birch St,Springfield,IL,62704,\n"])
+        output_path = self._path("labels.zpl")
+
+        status = main(
+            [
+                input_path,
+                "--output",
+                output_path,
+                "--label-width",
+                "2",
+                "--label-height",
+                "1",
+                "--dpi",
+                "300",
+            ]
+        )
+
+        self.assertEqual(status, 0)
+        content = open(output_path, encoding="utf-8").read()
+        self.assertIn("^PW600", content)
+        self.assertIn("^LL300", content)
+
 
 if __name__ == "__main__":
     unittest.main()

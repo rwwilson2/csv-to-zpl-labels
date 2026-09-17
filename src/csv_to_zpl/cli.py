@@ -8,7 +8,7 @@ import gzip
 import io
 import sys
 
-from .label import MissingFieldError, render_label
+from .label import DEFAULT_SIZE, LabelSize, MissingFieldError, render_label
 
 GZIP_MAGIC = b"\x1f\x8b"
 
@@ -40,10 +40,35 @@ def build_parser() -> argparse.ArgumentParser:
         action="store_true",
         help="skip rows missing required fields instead of aborting on the first one",
     )
+    parser.add_argument(
+        "--label-width",
+        type=float,
+        default=DEFAULT_SIZE.width_in,
+        metavar="INCHES",
+        help=f"label width in inches (default: {DEFAULT_SIZE.width_in})",
+    )
+    parser.add_argument(
+        "--label-height",
+        type=float,
+        default=DEFAULT_SIZE.height_in,
+        metavar="INCHES",
+        help=f"label height in inches (default: {DEFAULT_SIZE.height_in})",
+    )
+    parser.add_argument(
+        "--dpi",
+        type=int,
+        default=DEFAULT_SIZE.dpi,
+        help=f"printer resolution in dots per inch (default: {DEFAULT_SIZE.dpi})",
+    )
     return parser
 
 
-def run(input_path: str, output_path: str, skip_errors: bool = False) -> int:
+def run(
+    input_path: str,
+    output_path: str,
+    skip_errors: bool = False,
+    size: LabelSize = DEFAULT_SIZE,
+) -> int:
     in_file = _open_input(input_path)
     out_file = sys.stdout if output_path == "-" else open(output_path, "w", encoding="utf-8")
 
@@ -55,7 +80,7 @@ def run(input_path: str, output_path: str, skip_errors: bool = False) -> int:
         had_errors = False
         for line_number, row in enumerate(reader, start=2):  # header occupies line 1
             try:
-                label = render_label(row)
+                label = render_label(row, size)
             except MissingFieldError as exc:
                 print(f"{input_path}:{line_number}: {exc}", file=sys.stderr)
                 if not skip_errors:
@@ -74,7 +99,8 @@ def run(input_path: str, output_path: str, skip_errors: bool = False) -> int:
 
 def main(argv=None) -> int:
     args = build_parser().parse_args(argv)
-    return run(args.input, args.output, args.skip_errors)
+    size = LabelSize(args.label_width, args.label_height, args.dpi)
+    return run(args.input, args.output, args.skip_errors, size)
 
 
 if __name__ == "__main__":

@@ -82,8 +82,19 @@ order_id,name,address1,city,state,zip,weight_lbs
 ORD-10234,Jane Cooper,4821 Birch St,Springfield,IL,62704,2.3
 ```
 
-Labels are laid out for 4x6in stock at 203dpi, the default size and
-resolution for most desktop thermal shipping printers.
+Labels default to 4x6in stock at 203dpi, the default size and resolution
+for most desktop thermal shipping printers. Override any of the three with
+`--label-width`, `--label-height`, and `--dpi`:
+
+```
+python -m csv_to_zpl orders.csv --label-width 4 --label-height 3 --dpi 300 > labels.zpl
+```
+
+Changing `--dpi` scales the whole layout so the label keeps the same
+physical proportions instead of printing tiny in a corner of the page.
+Changing `--label-width`/`--label-height` alone changes only the page size
+(`^PW`/`^LL`); the field positions aren't reflowed, so a page much smaller
+than the 4x6in default can overflow.
 
 ## Install
 
